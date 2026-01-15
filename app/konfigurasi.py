@@ -11,11 +11,10 @@ from pydantic_settings import BaseSettings
 class Pengaturan(BaseSettings):
     """Konfigurasi aplikasi dari environment variables."""
 
-    # Pengaturan Azure OpenAI
-    azure_openai_endpoint: str = ""
-    azure_openai_api_key: str = ""
-    azure_openai_deployment: str = ""
-    azure_openai_api_version: str = "2024-02-15-preview"
+    # Pengaturan Groq API
+    groq_api_key: str = ""
+    groq_api_endpoint: str = "https://api.groq.com/openai/v1/chat/completions"
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # Pengaturan Aplikasi
     ukuran_maks_berkas_mb: int = 10
