@@ -1,12 +1,14 @@
-# 🚀 Tutorial Lengkap Deploy AI Proposal Reviewer ke Azure
+# 🚀 Tutorial Lengkap Deploy AI Proposal Reviewer ke Azure VM
 
-Tutorial ini menjelaskan langkah-langkah setup Azure OpenAI, Azure Virtual Machine, dan konfigurasi domain untuk aplikasi AI Proposal Reviewer.
+Tutorial ini menjelaskan langkah-langkah setup Groq API dan Azure Virtual Machine untuk aplikasi AI Proposal Reviewer.
+
+> **Note**: Aplikasi ini menggunakan **Groq API** dengan model **Llama 3.3 70B** (gratis!) sebagai pengganti Azure OpenAI.
 
 ---
 
 ## 📑 Daftar Isi
 
-1. [Setup Azure OpenAI](#1-setup-azure-openai)
+1. [Setup Groq API](#1-setup-groq-api)
 2. [Setup Azure Virtual Machine](#2-setup-azure-virtual-machine)
 3. [Setup Domain Azure](#3-setup-domain-azure)
 4. [Deploy Aplikasi](#4-deploy-aplikasi)
@@ -15,9 +17,47 @@ Tutorial ini menjelaskan langkah-langkah setup Azure OpenAI, Azure Virtual Machi
 
 ---
 
-## 1. Setup Azure OpenAI
+## 1. Setup Groq API
 
-### 1.1 Buat Resource Azure OpenAI
+### 1.1 Daftar Akun Groq (Gratis!)
+
+1. **Buka Groq Console**
+
+   - Kunjungi [https://console.groq.com](https://console.groq.com)
+   - Klik "Sign Up" dan daftar dengan Google/GitHub
+
+2. **Dapatkan API Key**
+
+   ```
+   Di Groq Console:
+   - Klik menu "API Keys" di sidebar
+   - Klik "Create API Key"
+   - Beri nama: "proposal-reviewer"
+   - Copy API key yang dihasilkan
+   ```
+
+3. **Informasi API Groq**
+   ```
+   Endpoint: https://api.groq.com/openai/v1/chat/completions
+   Model: llama-3.3-70b-versatile
+   API Key: gsk_xxxxxxxxxxxxxxxxxxxxx
+   ```
+
+### 1.2 Kelebihan Groq vs Azure OpenAI
+
+| Fitur     | Groq                      | Azure OpenAI              |
+| --------- | ------------------------- | ------------------------- |
+| Biaya     | **Gratis** (dengan limit) | Berbayar                  |
+| Kecepatan | Sangat cepat (LPU)        | Standar                   |
+| Model     | Llama 3.3 70B             | GPT-4, GPT-3.5            |
+| Setup     | Mudah (1 API key)         | Kompleks (Azure resource) |
+| Approval  | Tidak perlu               | Perlu approval            |
+
+---
+
+## 2. Setup Azure Virtual Machine
+
+### 2.1 Buat Virtual Machine
 
 1. **Login ke Azure Portal**
 
@@ -30,60 +70,13 @@ Tutorial ini menjelaskan langkah-langkah setup Azure OpenAI, Azure Virtual Machi
    Menu > Resource Groups > + Create
    - Subscription: <pilih subscription Anda>
    - Resource group name: rg-proposal-reviewer
-   - Region: Southeast Asia (atau region terdekat)
+   - Region: Southeast Asia
    - Klik "Review + create" > "Create"
    ```
 
-3. **Buat Azure OpenAI Resource**
+3. **Buat VM Linux**
 
-   ```
-   Menu > Create a resource > Search "Azure OpenAI"
-   - Klik "Azure OpenAI" > "Create"
-
-   Basics:
-   - Subscription: <subscription Anda>
-   - Resource group: rg-proposal-reviewer
-   - Region: East US (atau region dengan ketersediaan)
-   - Name: openai-proposal-reviewer (harus unik global)
-   - Pricing tier: Standard S0
-
-   - Klik "Next" > "Next" > "Review + create" > "Create"
-   ```
-
-   > ⚠️ **Catatan**: Azure OpenAI memerlukan approval. Jika belum disetujui, apply di [https://aka.ms/oai/access](https://aka.ms/oai/access)
-
-4. **Deploy Model GPT**
-
-   ```
-   Buka resource Azure OpenAI > Go to Azure OpenAI Studio
-
-   Di Azure OpenAI Studio:
-   - Menu Deployments > + Create new deployment
-   - Model: gpt-4 atau gpt-35-turbo
-   - Deployment name: gpt-proposal-reviewer
-   - Klik "Create"
-   ```
-
-5. **Catat Kredensial**
-
-   ```
-   Di Azure Portal > Resource Azure OpenAI > Keys and Endpoint
-
-   Catat:
-   - Endpoint: https://openai-proposal-reviewer.openai.azure.com/
-   - KEY 1: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   - Deployment Name: gpt-proposal-reviewer
-   ```
-
----
-
-## 2. Setup Azure Virtual Machine
-
-### 2.1 Buat Virtual Machine
-
-1. **Buat VM Linux**
-
-   ```
+   ```text
    Menu > Virtual machines > + Create > Azure virtual machine
 
    Basics:
@@ -91,60 +84,35 @@ Tutorial ini menjelaskan langkah-langkah setup Azure OpenAI, Azure Virtual Machi
    - Resource group: rg-proposal-reviewer
    - Virtual machine name: vm-proposal-reviewer
    - Region: Southeast Asia
-   - Availability options: No infrastructure redundancy required
    - Image: Ubuntu Server 22.04 LTS - x64 Gen2
-   - Size: Standard_B2s (2 vCPUs, 4 GB RAM) *untuk development
-         atau Standard_D2s_v3 (2 vCPUs, 8 GB RAM) *untuk production
+   - Size: Standard_B2s (2 vCPUs, 4 GB RAM)
 
    Administrator account:
-   - Authentication type: SSH public key
-   - Username: azureuser
-   - SSH public key source: Generate new key pair
-   - Key pair name: vm-proposal-reviewer-key
+   - Authentication type: Password
+   - Username: viona
+   - Password: <buat password yang kuat>
+   - Confirm password: <ulangi password>
 
    Inbound port rules:
    - Public inbound ports: Allow selected ports
    - Select inbound ports: SSH (22), HTTP (80), HTTPS (443)
    ```
 
-2. **Konfigurasi Disk**
+4. **Create VM**
 
-   ```
-   Tab "Disks":
-   - OS disk type: Standard SSD (untuk hemat biaya)
-   - Size: 30 GB (default cukup)
-   ```
-
-3. **Konfigurasi Networking**
-
-   ```
-   Tab "Networking":
-   - Virtual network: (create new) vnet-proposal-reviewer
-   - Subnet: default (10.0.0.0/24)
-   - Public IP: (create new) pip-proposal-reviewer
-   - NIC network security group: Basic
-   - Public inbound ports: SSH, HTTP, HTTPS (seperti di Basics)
-   ```
-
-4. **Review dan Create**
-
-   ```
+   ```text
    Klik "Review + create" > "Create"
-
-   ⚠️ PENTING: Download SSH private key saat diminta!
-   Simpan file .pem dengan aman.
+   Tunggu sampai deployment selesai.
    ```
 
 ### 2.2 Connect ke VM
 
 ```bash
 # Di Windows PowerShell atau Terminal
+# Connect via SSH dengan password
+ssh viona@<PUBLIC_IP_ADDRESS>
 
-# Set permission untuk key file
-icacls "vm-proposal-reviewer-key.pem" /inheritance:r /grant:r "$($env:USERNAME):(R)"
-
-# Connect via SSH
-ssh -i "vm-proposal-reviewer-key.pem" azureuser@<PUBLIC_IP_ADDRESS>
+# Masukkan password saat diminta
 ```
 
 ### 2.3 Setup Environment di VM
@@ -168,56 +136,23 @@ sudo apt install git -y
 
 # Create app directory
 sudo mkdir -p /opt/proposal-reviewer
-sudo chown azureuser:azureuser /opt/proposal-reviewer
+sudo chown viona:viona /opt/proposal-reviewer
+
+# Create log directory
+sudo mkdir -p /var/log/proposal-reviewer
+sudo chown viona:viona /var/log/proposal-reviewer
 ```
 
 ---
 
 ## 3. Setup Domain Azure
 
-### 3.1 Opsi A: Gunakan Azure DNS Zone (Custom Domain)
-
-1. **Buat DNS Zone**
-
-   ```
-   Menu > DNS zones > + Create
-
-   - Subscription: <subscription Anda>
-   - Resource group: rg-proposal-reviewer
-   - Name: proposalreviewer.com (domain Anda)
-   - Klik "Review + create" > "Create"
-   ```
-
-2. **Tambah A Record**
-
-   ```
-   Buka DNS Zone > + Record set
-
-   - Name: @ (untuk root domain) atau www
-   - Type: A
-   - TTL: 3600
-   - IP address: <PUBLIC_IP VM Anda>
-   - Klik "OK"
-   ```
-
-3. **Update Nameservers di Domain Registrar**
-
-   ```
-   Catat nameservers dari Azure DNS Zone:
-   - ns1-XX.azure-dns.com
-   - ns2-XX.azure-dns.net
-   - ns3-XX.azure-dns.org
-   - ns4-XX.azure-dns.info
-
-   Masuk ke domain registrar Anda dan update nameservers.
-   ```
-
-### 3.2 Opsi B: Gunakan Azure DNS Label (Subdomain Gratis)
+### 3.1 Gunakan Azure DNS Label (Gratis!)
 
 1. **Konfigurasi DNS Label untuk Public IP**
 
    ```
-   Menu > Public IP addresses > pip-proposal-reviewer
+   Menu > Public IP addresses > pip-proposal-reviewer (atau nama IP VM Anda)
 
    Configuration:
    - DNS name label: proposal-reviewer
@@ -233,6 +168,10 @@ sudo chown azureuser:azureuser /opt/proposal-reviewer
    Format: <dns-label>.<region>.cloudapp.azure.com
    ```
 
+### 3.2 (Opsional) Custom Domain
+
+Jika punya domain sendiri, bisa setup di Azure DNS Zone atau arahkan A record ke Public IP VM.
+
 ---
 
 ## 4. Deploy Aplikasi
@@ -241,14 +180,11 @@ sudo chown azureuser:azureuser /opt/proposal-reviewer
 
 ```bash
 # SSH ke VM
-ssh -i "vm-proposal-reviewer-key.pem" azureuser@<PUBLIC_IP>
+ssh viona@<PUBLIC_IP>
 
 # Clone repository
 cd /opt/proposal-reviewer
 git clone <YOUR_REPOSITORY_URL> .
-
-# Atau upload file manual
-# scp -i "vm-proposal-reviewer-key.pem" -r ./* azureuser@<PUBLIC_IP>:/opt/proposal-reviewer/
 
 # Create virtual environment
 python3.11 -m venv venv
@@ -257,25 +193,23 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 pip install gunicorn
-
-# Create .env file
-cp .env.example .env
-nano .env
 ```
 
 ### 4.2 Konfigurasi Environment Variables
 
 ```bash
-# Edit .env dengan kredensial Azure OpenAI
-nano /opt/proposal-reviewer/.env
+# Create .env file
+cp .env.example .env
+nano .env
 ```
 
+Edit file `.env`:
+
 ```ini
-# Isi dengan kredensial Azure OpenAI Anda
-AZURE_OPENAI_ENDPOINT=https://openai-proposal-reviewer.openai.azure.com/
-AZURE_OPENAI_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-AZURE_OPENAI_DEPLOYMENT=gpt-proposal-reviewer
-AZURE_OPENAI_API_VERSION=2024-02-15-preview
+# Groq API Configuration
+GROQ_API_KEY=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
+GROQ_API_ENDPOINT=https://api.groq.com/openai/v1/chat/completions
+GROQ_MODEL=llama-3.3-70b-versatile
 
 # Pengaturan Aplikasi
 UKURAN_MAKS_BERKAS_MB=10
@@ -305,11 +239,14 @@ sudo systemctl status proposal-reviewer
 # Copy nginx config
 sudo cp /opt/proposal-reviewer/deploy/nginx.conf /etc/nginx/sites-available/proposal-reviewer
 
+# Edit domain name jika perlu
+sudo nano /etc/nginx/sites-available/proposal-reviewer
+
 # Enable site
 sudo ln -s /etc/nginx/sites-available/proposal-reviewer /etc/nginx/sites-enabled/
 
 # Remove default site
-sudo rm /etc/nginx/sites-enabled/default
+sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test config
 sudo nginx -t
@@ -325,22 +262,16 @@ sudo systemctl restart nginx
 ### 5.1 Install Certbot
 
 ```bash
-# Install certbot
 sudo apt install certbot python3-certbot-nginx -y
 ```
 
 ### 5.2 Dapatkan SSL Certificate
 
-**Untuk Custom Domain:**
-
 ```bash
-sudo certbot --nginx -d proposalreviewer.com -d www.proposalreviewer.com
-```
-
-**Untuk Azure DNS Label:**
-
-```bash
+# Untuk Azure DNS Label
 sudo certbot --nginx -d proposal-reviewer.southeastasia.cloudapp.azure.com
+
+# Ikuti instruksi dan masukkan email
 ```
 
 ### 5.3 Auto-Renewal
@@ -364,7 +295,6 @@ sudo journalctl -u proposal-reviewer -f
 
 # Cek log nginx
 sudo tail -f /var/log/nginx/error.log
-sudo tail -f /var/log/nginx/access.log
 ```
 
 ### 6.2 Restart Services
@@ -379,46 +309,49 @@ sudo systemctl restart nginx
 
 ### 6.3 Common Issues
 
-| Issue              | Solusi                                                                 |
-| ------------------ | ---------------------------------------------------------------------- |
-| 502 Bad Gateway    | Cek apakah service berjalan: `sudo systemctl status proposal-reviewer` |
-| Connection refused | Cek firewall: `sudo ufw status` dan pastikan port 80/443 terbuka       |
-| SSL Error          | Cek certificate: `sudo certbot certificates`                           |
-| Azure OpenAI Error | Verifikasi endpoint dan API key di `.env`                              |
+| Issue              | Solusi                                                 |
+| ------------------ | ------------------------------------------------------ |
+| 502 Bad Gateway    | Cek service: `sudo systemctl status proposal-reviewer` |
+| Groq API Error     | Verifikasi API key di `.env`                           |
+| Connection refused | Cek firewall: `sudo ufw status`                        |
+| SSL Error          | Cek certificate: `sudo certbot certificates`           |
 
-### 6.4 Firewall Configuration
+### 6.4 Test Groq API
 
 ```bash
-# Jika menggunakan UFW
-sudo ufw allow 'Nginx Full'
-sudo ufw allow OpenSSH
-sudo ufw enable
+# Test API key
+curl -X POST https://api.groq.com/openai/v1/chat/completions \
+  -H "Authorization: Bearer $GROQ_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama-3.3-70b-versatile",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
 ```
 
 ---
 
 ## 📊 Estimasi Biaya Azure (per bulan)
 
-| Resource        | Spesifikasi          | Estimasi Biaya    |
-| --------------- | -------------------- | ----------------- |
-| Azure OpenAI    | GPT-4 ~1000 requests | ~$30-50           |
-| Virtual Machine | Standard_B2s         | ~$30              |
-| Public IP       | Static               | ~$4               |
-| Storage         | 30 GB SSD            | ~$3               |
-| **Total**       |                      | **~$70-90/bulan** |
+| Resource        | Spesifikasi           | Estimasi Biaya |
+| --------------- | --------------------- | -------------- |
+| **Groq API**    | Gratis (dengan limit) | **$0**         |
+| Virtual Machine | Standard_B2s          | ~$30           |
+| Public IP       | Static                | ~$4            |
+| Storage         | 30 GB SSD             | ~$3            |
+| **Total**       |                       | **~$37/bulan** |
 
-> 💡 **Tips Hemat**: Gunakan B1s VM untuk development (~$10/bulan) dan scale up untuk production.
+> 💡 **Tips Hemat**: Gunakan B1s VM untuk development (~$10/bulan)
 
 ---
 
 ## ✅ Checklist Deploy
 
-- [ ] Azure OpenAI resource created
-- [ ] GPT model deployed
+- [ ] Groq API key sudah didapat
 - [ ] VM created dan running
 - [ ] SSH connection berhasil
 - [ ] Python dan dependencies installed
-- [ ] .env configured dengan kredensial
+- [ ] .env configured dengan Groq API key
 - [ ] Systemd service running
 - [ ] Nginx configured
 - [ ] Domain/DNS configured
@@ -429,7 +362,7 @@ sudo ufw enable
 
 ## 🔗 Referensi
 
-- [Azure OpenAI Documentation](https://learn.microsoft.com/azure/cognitive-services/openai/)
+- [Groq Console](https://console.groq.com)
+- [Groq API Documentation](https://console.groq.com/docs)
 - [Azure VM Documentation](https://learn.microsoft.com/azure/virtual-machines/)
-- [Azure DNS Documentation](https://learn.microsoft.com/azure/dns/)
 - [Certbot Documentation](https://certbot.eff.org/)
