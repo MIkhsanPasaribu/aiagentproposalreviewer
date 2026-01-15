@@ -1,0 +1,67 @@
+# ============================================
+# Docker Compose untuk AI Proposal Reviewer
+# ============================================
+# Usage: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # Main Application
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: proposal-reviewer-app
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/kesehatan')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - proposal-network
+    volumes:
+      - app-logs:/var/log/proposal-reviewer
+
+  # Nginx Reverse Proxy (opsional untuk production)
+  nginx:
+    image: nginx:alpine
+    container_name: proposal-reviewer-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-docker.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../app/statis:/var/www/statis:ro
+      - certbot-www:/var/www/certbot:ro
+      - certbot-conf:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - proposal-network
+
+  # Certbot untuk SSL (opsional)
+  certbot:
+    image: certbot/certbot
+    container_name: proposal-reviewer-certbot
+    volumes:
+      - certbot-www:/var/www/certbot:rw
+      - certbot-conf:/etc/letsencrypt:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - proposal-network
+
+networks:
+  proposal-network:
+    driver: bridge
+
+volumes:
+  app-logs:
+  certbot-www:
+  certbot-conf:
