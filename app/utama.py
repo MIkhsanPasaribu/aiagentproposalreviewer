@@ -35,7 +35,7 @@ pencatat = logging.getLogger(__name__)
 # Inisialisasi aplikasi
 aplikasi = FastAPI(
     title="AI Proposal Reviewer",
-    description="API untuk meninjau proposal akademik menggunakan AI Agent",
+    description="API untuk meninjau proposal akademik menggunakan AI (Groq/Llama 3.3)",
     version="1.0.0"
 )
 
@@ -120,10 +120,10 @@ async def review_proposal(
         # Muat dan proses dokumen
         teks_proposal = await pemuat_dokumen.muat(jalur_sementara)
 
-        # Cek apakah Azure OpenAI dikonfigurasi
-        if not pengaturan.azure_openai_endpoint or not pengaturan.azure_openai_api_key:
+        # Cek apakah Groq API dikonfigurasi
+        if not pengaturan.groq_api_key:
             # Mode demo tanpa AI
-            pencatat.warning("Azure OpenAI tidak dikonfigurasi, menggunakan mode demo")
+            pencatat.warning("Groq API tidak dikonfigurasi, menggunakan mode demo")
             hasil_demo = HasilEvaluasi(
                 skor=75,
                 daftar_kekuatan=[
@@ -148,20 +148,13 @@ async def review_proposal(
             )
 
         # Inisialisasi agent dan lakukan review
-        from pydantic import SecretStr
-
-        from langchain_openai import AzureChatOpenAI
-
         from app.agen.agen_peninjau import AgenPeninjauProposal
 
-        llm = AzureChatOpenAI(
-            azure_endpoint=pengaturan.azure_openai_endpoint,
-            api_key=SecretStr(pengaturan.azure_openai_api_key),
-            azure_deployment=pengaturan.azure_openai_deployment,
-            api_version=pengaturan.azure_openai_api_version
+        agen = AgenPeninjauProposal(
+            api_key=pengaturan.groq_api_key,
+            api_endpoint=pengaturan.groq_api_endpoint,
+            model=pengaturan.groq_model
         )
-
-        agen = AgenPeninjauProposal(llm)
         hasil = await agen.tinjau(teks_proposal, jenis_proposal.value)
 
         # Format respons
