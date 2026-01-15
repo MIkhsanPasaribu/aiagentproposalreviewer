@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=azureuser
-Group=azureuser
+User=viona
+Group=viona
 WorkingDirectory=/opt/proposal-reviewer
 Environment="PATH=/opt/proposal-reviewer/venv/bin"
 EnvironmentFile=/opt/proposal-reviewer/.env
