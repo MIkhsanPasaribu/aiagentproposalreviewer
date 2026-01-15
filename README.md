@@ -1,11 +1,11 @@
 # 🤖 AI Proposal Reviewer
 
-Aplikasi web untuk meninjau dan mengevaluasi proposal akademik (PDF/DOCX) menggunakan AI Agent berbasis LangChain.
+Aplikasi web untuk meninjau dan mengevaluasi proposal akademik (PDF/DOCX) menggunakan AI (Groq/Llama 3.3 70B).
 
 ## ✨ Fitur
 
 - 📄 **Upload Proposal**: Mendukung format PDF dan DOCX
-- 🤖 **Evaluasi AI**: Analisis otomatis menggunakan Azure OpenAI
+- 🤖 **Evaluasi AI**: Analisis otomatis menggunakan Groq API (Llama 3.3 70B) - **GRATIS!**
 - 📊 **Skor Terperinci**: Evaluasi 5 aspek proposal (Latar Belakang, Formulasi Masalah, Tujuan, Metodologi, Luaran)
 - 💡 **Rekomendasi**: Daftar kekuatan, kelemahan, dan saran perbaikan
 - 🎨 **UI Modern**: Desain akademis dengan glassmorphism dan dark mode
@@ -13,7 +13,7 @@ Aplikasi web untuk meninjau dan mengevaluasi proposal akademik (PDF/DOCX) menggu
 ## 🛠️ Teknologi
 
 - **Backend**: Python 3.10+, FastAPI
-- **AI**: LangChain, Azure OpenAI
+- **AI**: Groq API (Llama 3.3 70B Versatile)
 - **Frontend**: HTML5, CSS3, JavaScript
 - **Document Processing**: PyPDF, docx2txt
 
@@ -42,19 +42,18 @@ pip install -r requirements.txt
 
 ### 4. Konfigurasi Environment
 
-Copy `.env.example` menjadi `.env` dan isi dengan kredensial Azure OpenAI:
+Copy `.env.example` menjadi `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` (API key sudah tersedia di example):
 
-```
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your-api-key
-AZURE_OPENAI_DEPLOYMENT=your-deployment-name
-AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```ini
+GROQ_API_KEY=gsk_xxxxxxxxxxxxx
+GROQ_API_ENDPOINT=https://api.groq.com/openai/v1/chat/completions
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
 ## 🚀 Menjalankan Aplikasi
@@ -97,7 +96,7 @@ ai-proposal-reviewer/
 │   ├── konfigurasi.py        # Pengaturan aplikasi
 │   ├── pengecualian.py       # Custom exceptions
 │   ├── agen/
-│   │   └── agen_peninjau.py  # LangChain Agent
+│   │   └── agen_peninjau.py  # Groq AI Agent
 │   ├── layanan/
 │   │   ├── pemuat_dokumen.py # PDF/DOCX loader
 │   │   └── pemformat_keluaran.py
