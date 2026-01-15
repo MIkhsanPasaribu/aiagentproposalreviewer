@@ -1,0 +1,143 @@
+# ============================================
+# .gitignore untuk AI Proposal Reviewer
+# ============================================
+
+# ----------------------
+# Python
+# ----------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# ----------------------
+# IDE & Editor
+# ----------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+.spyderproject
+.spyproject
+
+# ----------------------
+# Environment Variables
+# ----------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ----------------------
+# Logs
+# ----------------------
+*.log
+logs/
+*.log.*
+
+# ----------------------
+# Testing
+# ----------------------
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+nosetests.xml
+
+# ----------------------
+# Type Checking
+# ----------------------
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
+pyrightconfig.json
+
+# ----------------------
+# OS Generated
+# ----------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ----------------------
+# Temporary Files
+# ----------------------
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ----------------------
+# Build & Distribution
+# ----------------------
+build/
+dist/
+*.manifest
+*.spec
+
+# ----------------------
+# Uploaded Files
+# ----------------------
+uploads/
+*.pdf
+*.docx
+!docs/*.pdf
+
+# ----------------------
+# Docker
+# ----------------------
+# Uncomment if tidak ingin track docker files
+# docker-compose.override.yml
+
+# ----------------------
+# Pyright Output
+# ----------------------
+pyright_output.txt
+
+# ----------------------
+# Jupyter Notebook
+# ----------------------
+.ipynb_checkpoints/
+*.ipynb
+
+# ----------------------
+# Local Development
+# ----------------------
+*.local
+.cache/
