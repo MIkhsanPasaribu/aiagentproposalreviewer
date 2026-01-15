@@ -1,0 +1,13 @@
+[project]
+name = "ai-proposal-reviewer"
+version = "1.0.0"
+description = "Aplikasi web untuk menilai proposal akademik menggunakan AI Agent berbasis LangChain"
+requires-python = ">=3.10"
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
+include = ["app", "pengujian"]
+exclude = ["venv", ".venv", "__pycache__"]
+reportMissingImports = true
+reportMissingTypeStubs = false
