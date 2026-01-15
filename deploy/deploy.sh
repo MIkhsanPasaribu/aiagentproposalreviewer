@@ -2,7 +2,8 @@
 # ============================================
 # Script Deploy AI Proposal Reviewer
 # ============================================
-# Jalankan: chmod +x deploy.sh && ./deploy.sh
+# Jalankan script ini SETELAH login SSH ke VM:
+# chmod +x deploy.sh && ./deploy.sh
 
 set -e
 
@@ -10,98 +11,113 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  AI Proposal Reviewer - Deploy Script  ${NC}"
-echo -e "${GREEN}========================================${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}  AI Proposal Reviewer - Deploy Script  ${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo ""
 
 # Variables
 APP_DIR="/opt/proposal-reviewer"
 LOG_DIR="/var/log/proposal-reviewer"
-USER="azureuser"
+CURRENT_DIR=$(pwd)
 
-# Create directories
-echo -e "${YELLOW}[1/7] Creating directories...${NC}"
+# [1] Create directories
+echo -e "${YELLOW}[1/7] Membuat direktori...${NC}"
 sudo mkdir -p $APP_DIR
 sudo mkdir -p $LOG_DIR
 sudo chown -R $USER:$USER $APP_DIR
 sudo chown -R $USER:$USER $LOG_DIR
+echo -e "${GREEN}✓ Direktori berhasil dibuat${NC}"
 
-# Copy application files
-echo -e "${YELLOW}[2/7] Copying application files...${NC}"
-if [ -d "./app" ]; then
-    cp -r ./app $APP_DIR/
-    cp -r ./pengujian $APP_DIR/ 2>/dev/null || true
-    cp requirements.txt $APP_DIR/
-    cp .env.example $APP_DIR/
-    [ -f .env ] && cp .env $APP_DIR/
+# [2] Copy application files
+echo -e "${YELLOW}[2/7] Menyalin file aplikasi ke $APP_DIR...${NC}"
+if [ -d "$CURRENT_DIR/app" ]; then
+    cp -r $CURRENT_DIR/app $APP_DIR/
+    cp -r $CURRENT_DIR/pengujian $APP_DIR/ 2>/dev/null || true
+    cp -r $CURRENT_DIR/deploy $APP_DIR/
+    cp $CURRENT_DIR/requirements.txt $APP_DIR/
+    cp $CURRENT_DIR/.env.example $APP_DIR/
+    [ -f "$CURRENT_DIR/.env" ] && cp $CURRENT_DIR/.env $APP_DIR/
+    echo -e "${GREEN}✓ File aplikasi berhasil disalin${NC}"
 else
-    echo -e "${RED}Error: ./app directory not found. Run from project root.${NC}"
+    echo -e "${RED}Error: Folder 'app' tidak ditemukan.${NC}"
+    echo -e "${RED}Pastikan menjalankan script dari root folder project.${NC}"
     exit 1
 fi
 
-# Setup virtual environment
-echo -e "${YELLOW}[3/7] Setting up Python virtual environment...${NC}"
+# [3] Setup Python virtual environment
+echo -e "${YELLOW}[3/7] Setup Python virtual environment...${NC}"
 cd $APP_DIR
-python3.11 -m venv venv || python3 -m venv venv
+python3.11 -m venv venv 2>/dev/null || python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-pip install gunicorn
+pip install --upgrade pip -q
+pip install -r requirements.txt -q
+pip install gunicorn -q
+echo -e "${GREEN}✓ Virtual environment berhasil dibuat${NC}"
 
-# Check .env file
-echo -e "${YELLOW}[4/7] Checking .env configuration...${NC}"
+# [4] Setup .env file
+echo -e "${YELLOW}[4/7] Mengecek konfigurasi .env...${NC}"
 if [ ! -f "$APP_DIR/.env" ]; then
-    echo -e "${YELLOW}Warning: .env file not found. Creating from example...${NC}"
     cp $APP_DIR/.env.example $APP_DIR/.env
-    echo -e "${RED}Please edit $APP_DIR/.env with your Azure OpenAI credentials${NC}"
+    echo -e "${YELLOW}⚠ File .env dibuat dari .env.example${NC}"
+    echo -e "${YELLOW}  API key Groq sudah tersedia di file tersebut.${NC}"
+else
+    echo -e "${GREEN}✓ File .env sudah ada${NC}"
 fi
 
-# Setup systemd service
-echo -e "${YELLOW}[5/7] Setting up systemd service...${NC}"
-sudo cp deploy/proposal-reviewer.service /etc/systemd/system/
+# [5] Setup systemd service
+echo -e "${YELLOW}[5/7] Setup systemd service...${NC}"
+sudo cp $APP_DIR/deploy/proposal-reviewer.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable proposal-reviewer
 sudo systemctl restart proposal-reviewer
+echo -e "${GREEN}✓ Systemd service berhasil disetup${NC}"
 
-# Setup Nginx
-echo -e "${YELLOW}[6/7] Setting up Nginx...${NC}"
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/proposal-reviewer
+# [6] Setup Nginx
+echo -e "${YELLOW}[6/7] Setup Nginx reverse proxy...${NC}"
+sudo cp $APP_DIR/deploy/nginx.conf /etc/nginx/sites-available/proposal-reviewer
 sudo ln -sf /etc/nginx/sites-available/proposal-reviewer /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl restart nginx
+sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 
-# Verify deployment
-echo -e "${YELLOW}[7/7] Verifying deployment...${NC}"
+if sudo nginx -t 2>/dev/null; then
+    sudo systemctl restart nginx
+    echo -e "${GREEN}✓ Nginx berhasil dikonfigurasi${NC}"
+else
+    echo -e "${RED}✗ Konfigurasi Nginx error, cek nginx.conf${NC}"
+fi
+
+# [7] Verify deployment
+echo -e "${YELLOW}[7/7] Verifikasi deployment...${NC}"
 sleep 3
 
 if systemctl is-active --quiet proposal-reviewer; then
-    echo -e "${GREEN}✓ Application service is running${NC}"
+    echo -e "${GREEN}✓ Service proposal-reviewer berjalan${NC}"
 else
-    echo -e "${RED}✗ Application service failed to start${NC}"
-    sudo journalctl -u proposal-reviewer -n 20
+    echo -e "${RED}✗ Service gagal start. Cek log:${NC}"
+    echo -e "  sudo journalctl -u proposal-reviewer -n 20"
 fi
 
 if systemctl is-active --quiet nginx; then
-    echo -e "${GREEN}✓ Nginx is running${NC}"
+    echo -e "${GREEN}✓ Nginx berjalan${NC}"
 else
-    echo -e "${RED}✗ Nginx failed to start${NC}"
+    echo -e "${RED}✗ Nginx gagal start${NC}"
 fi
 
 # Get public IP
-PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null || echo "unknown")
+PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null || echo "<IP_ANDA>")
 
 echo ""
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  Deployment Complete!                  ${NC}"
-echo -e "${GREEN}========================================${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo -e "${GREEN}  ✅ Deployment Selesai!                ${NC}"
+echo -e "${BLUE}========================================${NC}"
 echo ""
-echo -e "Application URL: http://$PUBLIC_IP"
-echo -e "Health Check: http://$PUBLIC_IP/api/kesehatan"
+echo -e "🌐 Akses aplikasi: ${GREEN}http://$PUBLIC_IP${NC}"
+echo -e "🔍 Health check:   ${GREEN}http://$PUBLIC_IP/api/kesehatan${NC}"
 echo ""
-echo -e "${YELLOW}Next steps:${NC}"
-echo -e "1. Edit .env file: nano $APP_DIR/.env"
-echo -e "2. Restart service: sudo systemctl restart proposal-reviewer"
-echo -e "3. Setup SSL: sudo certbot --nginx -d YOUR_DOMAIN"
+echo -e "${YELLOW}Langkah selanjutnya:${NC}"
+echo -e "1. Setup SSL: sudo certbot --nginx -d YOUR_DOMAIN"
+echo -e "2. Cek logs:  sudo journalctl -u proposal-reviewer -f"
 echo ""
