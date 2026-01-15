@@ -1,0 +1,55 @@
+# .dockerignore untuk AI Proposal Reviewer
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Deploy folder (tidak perlu di Docker image)
+deploy/
+
+# Docs
+docs/
+
+# Tests (opsional, uncomment jika tidak mau include tests)
+# pengujian/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
