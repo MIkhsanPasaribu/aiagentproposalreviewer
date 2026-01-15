@@ -1,17 +1,15 @@
 """
 Modul agent peninjau proposal.
 
-Implementasi LangChain Agent untuk meninjau
-dan mengevaluasi proposal akademik.
+Implementasi Agent untuk meninjau dan mengevaluasi
+proposal akademik menggunakan Groq API (Llama 3.3).
 """
 
 import json
 import logging
 from typing import Any
 
-from langchain.chains import LLMChain  # type: ignore[import-untyped]
-from langchain.prompts import PromptTemplate  # type: ignore[import-untyped]
-from langchain_openai import AzureChatOpenAI
+import httpx
 
 from app.pengecualian import GagalMemproses
 
@@ -20,9 +18,9 @@ pencatat = logging.getLogger(__name__)
 
 class AgenPeninjauProposal:
     """
-    Agent LangChain untuk meninjau dan mengevaluasi proposal akademik.
+    Agent untuk meninjau dan mengevaluasi proposal akademik.
 
-    Agent ini menggunakan structured reasoning untuk menilai:
+    Menggunakan Groq API dengan model Llama 3.3 70B untuk menilai:
     - Kejelasan latar belakang
     - Formulasi masalah
     - Tujuan penelitian
@@ -62,20 +60,24 @@ Proposal:
 {teks_proposal}
 """
 
-    def __init__(self, llm: AzureChatOpenAI):
+    def __init__(
+        self,
+        api_key: str,
+        api_endpoint: str = "https://api.groq.com/openai/v1/chat/completions",
+        model: str = "llama-3.3-70b-versatile"
+    ):
         """
         Inisialisasi agent peninjau proposal.
 
         Parameter:
-            llm: Instance Azure OpenAI LLM
+            api_key: API key untuk Groq
+            api_endpoint: Endpoint API Groq
+            model: Model yang digunakan (default: llama-3.3-70b-versatile)
         """
-        self._llm = llm
-        self._prompt = PromptTemplate(
-            input_variables=["teks_proposal", "jenis_proposal"],
-            template=self.TEMPLAT_PROMPT
-        )
-        self._rantai = LLMChain(llm=self._llm, prompt=self._prompt)
-        pencatat.info("AgenPeninjauProposal berhasil diinisialisasi")
+        self._api_key = api_key
+        self._api_endpoint = api_endpoint
+        self._model = model
+        pencatat.info(f"AgenPeninjauProposal diinisialisasi dengan model: {model}")
 
     async def tinjau(
         self,
@@ -101,13 +103,57 @@ Proposal:
 
         pencatat.info(f"Memulai review proposal jenis: {jenis_proposal}")
 
+        # Format prompt
+        prompt = self.TEMPLAT_PROMPT.format(
+            jenis_proposal=jenis_proposal,
+            teks_proposal=teks_proposal
+        )
+
         try:
-            hasil = await self._rantai.ainvoke({
-                "teks_proposal": teks_proposal,
-                "jenis_proposal": jenis_proposal
-            })
+            # Panggil Groq API
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(
+                    self._api_endpoint,
+                    headers={
+                        "Authorization": f"Bearer {self._api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": self._model,
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "Anda adalah peninjau proposal akademik profesional. Berikan respons dalam format JSON valid."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        "temperature": 0.3,
+                        "max_tokens": 2000
+                    }
+                )
+
+                if response.status_code != 200:
+                    pencatat.error(f"Groq API error: {response.status_code} - {response.text}")
+                    raise GagalMemproses(
+                        pesan=f"Gagal memanggil Groq API: {response.status_code}",
+                        kode="GROQ_API_ERROR"
+                    )
+
+                hasil_json = response.json()
+                hasil_teks = hasil_json["choices"][0]["message"]["content"]
+
             pencatat.info("Review proposal selesai")
-            return self._parse_hasil(hasil.get("text", ""))
+            return self._parse_hasil(hasil_teks)
+
+        except httpx.TimeoutException:
+            pencatat.error("Timeout saat memanggil Groq API")
+            raise GagalMemproses(
+                pesan="Timeout saat memproses proposal. Silakan coba lagi.",
+                kode="TIMEOUT"
+            )
         except Exception as e:
             pencatat.error(f"Gagal melakukan review: {str(e)}")
             raise GagalMemproses(
@@ -147,7 +193,7 @@ Proposal:
             except (json.JSONDecodeError, AttributeError):
                 pass
 
-            pencatat.warning(f"Gagal parse JSON dari respons LLM")
+            pencatat.warning("Gagal parse JSON dari respons LLM")
             raise GagalMemproses(
                 pesan="Format respons tidak valid dari AI",
                 kode="FORMAT_TIDAK_VALID"
