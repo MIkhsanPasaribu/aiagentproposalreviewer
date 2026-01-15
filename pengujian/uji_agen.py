@@ -6,7 +6,7 @@ agent dan layanan pemuat dokumen.
 """
 
 from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -82,16 +82,17 @@ class TestAgenPeninjauProposal:
     """Kelas pengujian untuk AgenPeninjauProposal."""
 
     @pytest.fixture
-    def mock_llm(self) -> Mock:
-        """Fixture untuk mock LLM."""
-        return Mock()
+    def agen(self) -> "AgenPeninjauProposal":  # type: ignore[name-defined]
+        """Fixture untuk instance agent dengan API key dummy."""
+        from app.agen.agen_peninjau import AgenPeninjauProposal
+        return AgenPeninjauProposal(api_key="dummy-key")
 
     @pytest.mark.asyncio
-    async def test_tinjau_teks_kosong(self, mock_llm: Mock) -> None:
+    async def test_tinjau_teks_kosong(self) -> None:
         """Menguji error untuk teks proposal kosong."""
         from app.agen.agen_peninjau import AgenPeninjauProposal
 
-        agen = AgenPeninjauProposal(mock_llm)
+        agen = AgenPeninjauProposal(api_key="dummy-key")
 
         with pytest.raises(ValueError) as exc_info:
             await agen.tinjau("", "pkm")
@@ -99,11 +100,11 @@ class TestAgenPeninjauProposal:
         assert "kosong" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_tinjau_teks_whitespace(self, mock_llm: Mock) -> None:
+    async def test_tinjau_teks_whitespace(self) -> None:
         """Menguji error untuk teks proposal hanya whitespace."""
         from app.agen.agen_peninjau import AgenPeninjauProposal
 
-        agen = AgenPeninjauProposal(mock_llm)
+        agen = AgenPeninjauProposal(api_key="dummy-key")
 
         with pytest.raises(ValueError):
             await agen.tinjau("   \n\t  ", "pkm")
