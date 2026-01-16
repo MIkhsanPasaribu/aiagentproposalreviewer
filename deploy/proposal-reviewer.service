@@ -1,33 +1,28 @@
 [Unit]
-Description=AI Proposal Reviewer - FastAPI Application
+Description=AI Proposal Reviewer - Groq API Service
 After=network.target
 
 [Service]
-Type=simple
+Type=notify
 User=viona
 Group=viona
 WorkingDirectory=/opt/proposal-reviewer
 Environment="PATH=/opt/proposal-reviewer/venv/bin"
-EnvironmentFile=/opt/proposal-reviewer/.env
 ExecStart=/opt/proposal-reviewer/venv/bin/gunicorn app.utama:aplikasi \
     --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 127.0.0.1:8000 \
     --access-logfile /var/log/proposal-reviewer/access.log \
     --error-logfile /var/log/proposal-reviewer/error.log \
-    --capture-output \
     --log-level info
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
 
 # Restart policy
-Restart=always
-RestartSec=5
-
-# Security hardening
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/opt/proposal-reviewer /var/log/proposal-reviewer /tmp
+Restart=on-failure
+RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target

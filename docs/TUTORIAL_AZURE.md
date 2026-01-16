@@ -176,15 +176,78 @@ Jika punya domain sendiri, bisa setup di Azure DNS Zone atau arahkan A record ke
 
 ## 4. Deploy Aplikasi
 
-### 4.1 Clone dan Setup Aplikasi
+### 🚀 Metode Otomatis (Recommended)
+
+Kami sudah menyediakan script otomatis untuk deployment. Anda hanya perlu menjalankan satu script!
+
+#### 4.1 Clone dan Jalankan Script Deploy
 
 ```bash
 # SSH ke VM
 ssh viona@<PUBLIC_IP>
 
+# Clone repository ke temporary folder
+cd /tmp
+git clone https://github.com/MIkhsanPasaribu/aiagentproposalreviewer.git
+cd aiagentproposalreviewer/deploy
+
+# Jalankan script deployment
+chmod +x deploy.sh
+sudo ./deploy.sh
+```
+
+#### 4.2 Ikuti Prompt Interactive
+
+Script akan menanyakan:
+
+1. **Groq API Key**
+
+   - Masukkan API key dari Groq Console
+   - Format: `gsk_xxxxxxxxxxxxxxxxxxxxx`
+
+2. **Domain/IP Configuration**
+
+   - Pilih salah satu:
+     - Opsi 1: IP Public saja
+     - Opsi 2: Azure DNS Label (contoh: `proposal-reviewer.southeastasia.cloudapp.azure.com`)
+     - Opsi 3: Custom domain
+
+3. **SSL Certificate (Optional)**
+   - Pilih Y jika ingin install SSL
+   - Masukkan email untuk Certbot
+
+#### 4.3 Selesai!
+
+Script akan otomatis:
+
+- ✅ Install semua dependencies (Python, Nginx, Git)
+- ✅ Setup aplikasi di `/opt/proposal-reviewer`
+- ✅ Konfigurasi environment variables
+- ✅ Setup systemd service
+- ✅ Konfigurasi Nginx
+- ✅ Start aplikasi
+- ✅ (Optional) Setup SSL certificate
+
+### 📝 Metode Manual (Alternatif)
+
+Jika ingin setup manual, ikuti langkah berikut:
+
+<details>
+<summary>Klik untuk melihat langkah manual</summary>
+
+#### 4.1 Clone dan Setup Aplikasi
+
+```bash
+# SSH ke VM
+ssh viona@<PUBLIC_IP>
+
+# Create app directory
+sudo mkdir -p /opt/proposal-reviewer
+sudo chown viona:viona /opt/proposal-reviewer
+
 # Clone repository
 cd /opt/proposal-reviewer
-git clone <YOUR_REPOSITORY_URL> .
+git clone https://github.com/MIkhsanPasaribu/aiagentproposalreviewer.git .
 
 # Create virtual environment
 python3.11 -m venv venv
@@ -195,7 +258,7 @@ pip install -r requirements.txt
 pip install gunicorn
 ```
 
-### 4.2 Konfigurasi Environment Variables
+#### 4.2 Konfigurasi Environment Variables
 
 ```bash
 # Create .env file
@@ -207,7 +270,7 @@ Edit file `.env`:
 
 ```ini
 # Groq API Configuration
-GROQ_API_KEY=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
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxx
 GROQ_API_ENDPOINT=https://api.groq.com/openai/v1/chat/completions
 GROQ_MODEL=llama-3.3-70b-versatile
 
@@ -216,7 +279,7 @@ UKURAN_MAKS_BERKAS_MB=10
 MODE_DEBUG=false
 ```
 
-### 4.3 Setup Systemd Service
+#### 4.3 Setup Systemd Service
 
 ```bash
 # Copy service file
@@ -233,13 +296,13 @@ sudo systemctl start proposal-reviewer
 sudo systemctl status proposal-reviewer
 ```
 
-### 4.4 Setup Nginx Reverse Proxy
+#### 4.4 Setup Nginx Reverse Proxy
 
 ```bash
 # Copy nginx config
 sudo cp /opt/proposal-reviewer/deploy/nginx.conf /etc/nginx/sites-available/proposal-reviewer
 
-# Edit domain name jika perlu
+# Edit domain name
 sudo nano /etc/nginx/sites-available/proposal-reviewer
 
 # Enable site
@@ -255,17 +318,50 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
+</details>
+
 ---
 
 ## 5. Konfigurasi SSL/HTTPS
 
-### 5.1 Install Certbot
+### 🚀 Metode Otomatis (Recommended)
+
+```bash
+# Jalankan script setup SSL
+cd /opt/proposal-reviewer/deploy
+chmod +x setup-ssl.sh
+sudo ./setup-ssl.sh <domain-anda>
+```
+
+**Contoh:**
+
+```bash
+# Untuk Azure DNS Label
+sudo ./setup-ssl.sh proposal-reviewer.southeastasia.cloudapp.azure.com
+
+# Untuk custom domain
+sudo ./setup-ssl.sh yourdomain.com
+```
+
+Script akan otomatis:
+
+- ✅ Install Certbot
+- ✅ Request SSL certificate
+- ✅ Konfigurasi Nginx untuk HTTPS
+- ✅ Setup auto-renewal
+
+### 📝 Metode Manual (Alternatif)
+
+<details>
+<summary>Klik untuk melihat langkah manual</summary>
+
+#### 5.1 Install Certbot
 
 ```bash
 sudo apt install certbot python3-certbot-nginx -y
 ```
 
-### 5.2 Dapatkan SSL Certificate
+#### 5.2 Dapatkan SSL Certificate
 
 ```bash
 # Untuk Azure DNS Label
@@ -274,7 +370,7 @@ sudo certbot --nginx -d proposal-reviewer.southeastasia.cloudapp.azure.com
 # Ikuti instruksi dan masukkan email
 ```
 
-### 5.3 Auto-Renewal
+#### 5.3 Auto-Renewal
 
 ```bash
 # Test auto-renewal
@@ -283,21 +379,82 @@ sudo certbot renew --dry-run
 # Certbot sudah otomatis setup cron job untuk renewal
 ```
 
+</details>
+
 ---
 
-## 6. Troubleshooting
+## 6. Update Aplikasi
 
-### 6.1 Cek Log Aplikasi
+### 🚀 Update Otomatis
+
+Untuk update ke versi terbaru:
 
 ```bash
-# Cek log systemd service
-sudo journalctl -u proposal-reviewer -f
-
-# Cek log nginx
-sudo tail -f /var/log/nginx/error.log
+cd /opt/proposal-reviewer/deploy
+sudo ./update.sh
 ```
 
-### 6.2 Restart Services
+Script akan otomatis:
+
+- ✅ Stop aplikasi
+- ✅ Backup file `.env`
+- ✅ Pull kode terbaru dari Git
+- ✅ Restore file `.env`
+- ✅ Update dependencies
+- ✅ Restart aplikasi
+
+### 📝 Update Manual
+
+<details>
+<summary>Klik untuk melihat langkah manual</summary>
+
+```bash
+# Stop service
+sudo systemctl stop proposal-reviewer
+
+# Backup .env
+cp /opt/proposal-reviewer/.env /opt/proposal-reviewer/.env.backup
+
+# Pull latest code
+cd /opt/proposal-reviewer
+git pull
+
+# Restore .env
+cp /opt/proposal-reviewer/.env.backup /opt/proposal-reviewer/.env
+
+# Update dependencies
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Start service
+sudo systemctl start proposal-reviewer
+```
+
+</details>
+
+---
+
+## 7. Troubleshooting
+
+## 7. Troubleshooting
+
+### 7.1 Cek Log Aplikasi
+
+```bash
+# Cek log systemd service (real-time)
+sudo journalctl -u proposal-reviewer -f
+
+# Cek 50 baris terakhir
+sudo journalctl -u proposal-reviewer -n 50
+
+# Cek log nginx
+sudo tail -f /var/log/nginx/proposal-reviewer_error.log
+
+# Cek log aplikasi
+sudo tail -f /var/log/proposal-reviewer/error.log
+```
+
+### 7.2 Restart Services
 
 ```bash
 # Restart aplikasi
@@ -305,21 +462,30 @@ sudo systemctl restart proposal-reviewer
 
 # Restart nginx
 sudo systemctl restart nginx
+
+# Restart keduanya
+sudo systemctl restart proposal-reviewer nginx
 ```
 
-### 6.3 Common Issues
+### 7.3 Common Issues
 
-| Issue              | Solusi                                                 |
-| ------------------ | ------------------------------------------------------ |
-| 502 Bad Gateway    | Cek service: `sudo systemctl status proposal-reviewer` |
-| Groq API Error     | Verifikasi API key di `.env`                           |
-| Connection refused | Cek firewall: `sudo ufw status`                        |
-| SSL Error          | Cek certificate: `sudo certbot certificates`           |
+| Issue                  | Solusi                                                      |
+| ---------------------- | ----------------------------------------------------------- |
+| 502 Bad Gateway        | `sudo systemctl status proposal-reviewer`                   |
+| Groq API Error         | Cek API key di `/opt/proposal-reviewer/.env`                |
+| Connection refused     | `sudo ufw status` dan pastikan port 80/443 terbuka          |
+| SSL Error              | `sudo certbot certificates` dan cek validity                |
+| Port 8000 already used | `sudo netstat -tulpn \| grep 8000` dan kill process lama    |
+| Permission denied      | `sudo chown -R viona:viona /opt/proposal-reviewer`          |
+| Git pull error         | `cd /opt/proposal-reviewer && git reset --hard origin/main` |
 
-### 6.4 Test Groq API
+### 7.4 Test Groq API
 
 ```bash
-# Test API key
+# Export API key
+export GROQ_API_KEY="gsk_xxxxxxxxxxxxxxxxxxxxx"
+
+# Test API
 curl -X POST https://api.groq.com/openai/v1/chat/completions \
   -H "Authorization: Bearer $GROQ_API_KEY" \
   -H "Content-Type: application/json" \
@@ -328,6 +494,75 @@ curl -X POST https://api.groq.com/openai/v1/chat/completions \
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
+
+### 7.5 Useful Commands
+
+```bash
+# Status aplikasi
+sudo systemctl status proposal-reviewer
+
+# Restart aplikasi
+sudo systemctl restart proposal-reviewer
+
+# Stop aplikasi
+sudo systemctl stop proposal-reviewer
+
+# Start aplikasi
+sudo systemctl start proposal-reviewer
+
+# Reload nginx (tanpa downtime)
+sudo systemctl reload nginx
+
+# Test nginx config
+sudo nginx -t
+
+# Cek disk space
+df -h
+
+# Cek memory usage
+free -h
+
+# Cek process
+ps aux | grep gunicorn
+```
+
+---
+
+## 8. Backup & Restore
+
+### 8.1 Backup
+
+```bash
+# Backup .env dan database (jika ada)
+sudo tar -czf backup-$(date +%Y%m%d).tar.gz \
+  /opt/proposal-reviewer/.env \
+  /opt/proposal-reviewer/data
+```
+
+### 8.2 Restore
+
+```bash
+# Restore dari backup
+sudo tar -xzf backup-20260116.tar.gz -C /
+sudo chown -R viona:viona /opt/proposal-reviewer
+sudo systemctl restart proposal-reviewer
+```
+
+---
+
+## ✅ Checklist Deploy
+
+- [ ] Groq API key sudah didapat
+- [ ] VM created dan running
+- [ ] SSH connection berhasil
+- [ ] Script `deploy.sh` berhasil dijalankan
+- [ ] .env configured dengan Groq API key
+- [ ] Systemd service running (`sudo systemctl status proposal-reviewer`)
+- [ ] Nginx configured (`sudo nginx -t`)
+- [ ] Domain/DNS configured
+- [ ] SSL certificate installed (optional)
+- [ ] Aplikasi accessible via HTTP/HTTPS
+- [ ] Test upload proposal berhasil
 
 ---
 
@@ -350,13 +585,14 @@ curl -X POST https://api.groq.com/openai/v1/chat/completions \
 - [ ] Groq API key sudah didapat
 - [ ] VM created dan running
 - [ ] SSH connection berhasil
-- [ ] Python dan dependencies installed
+- [ ] Script `deploy.sh` berhasil dijalankan
 - [ ] .env configured dengan Groq API key
-- [ ] Systemd service running
-- [ ] Nginx configured
+- [ ] Systemd service running (`sudo systemctl status proposal-reviewer`)
+- [ ] Nginx configured (`sudo nginx -t`)
 - [ ] Domain/DNS configured
-- [ ] SSL certificate installed
-- [ ] Aplikasi accessible via HTTPS
+- [ ] SSL certificate installed (optional)
+- [ ] Aplikasi accessible via HTTP/HTTPS
+- [ ] Test upload proposal berhasil
 
 ---
 
@@ -366,3 +602,14 @@ curl -X POST https://api.groq.com/openai/v1/chat/completions \
 - [Groq API Documentation](https://console.groq.com/docs)
 - [Azure VM Documentation](https://learn.microsoft.com/azure/virtual-machines/)
 - [Certbot Documentation](https://certbot.eff.org/)
+- [Deploy Scripts README](../deploy/README.md)
+
+---
+
+## 📞 Support
+
+Jika mengalami masalah:
+
+1. Cek [Troubleshooting](#7-troubleshooting)
+2. Cek logs: `sudo journalctl -u proposal-reviewer -f`
+3. Buka issue di [GitHub Repository](https://github.com/MIkhsanPasaribu/aiagentproposalreviewer/issues)
