@@ -17,6 +17,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.konfigurasi import dapatkan_pengaturan
 from app.layanan.pemuat_dokumen import PemuatDokumen
+from app.layanan.database_riwayat import DatabaseRiwayat
 from app.pengecualian import (
     BatasUkuranTerlampaui,
     DokumenTidakValid,
@@ -72,6 +73,7 @@ async def validasi_konfigurasi():
     pencatat.info("Konfigurasi valid ✓")
 
 pemuat_dokumen = PemuatDokumen(ukuran_maks_mb=pengaturan.ukuran_maks_berkas_mb)
+database_riwayat = DatabaseRiwayat()
 
 
 @aplikasi.get("/", response_class=HTMLResponse)
@@ -177,10 +179,25 @@ async def review_proposal(
         hasil = await agen.tinjau(teks_proposal, jenis_proposal.value)
 
         # Format respons
+        hasil_evaluasi = HasilEvaluasi(**hasil)
+        
+        # Simpan ke database riwayat
+        try:
+            ukuran_berkas = len(konten) if 'konten' in locals() else None
+            review_id = database_riwayat.simpan_review(
+                nama_berkas=berkas.filename,
+                jenis_proposal=jenis_proposal.value,
+                hasil=hasil_evaluasi,
+                ukuran_berkas=ukuran_berkas
+            )
+            pencatat.info(f"Review disimpan dengan ID: {review_id}")
+        except Exception as e:
+            pencatat.warning(f"Gagal menyimpan riwayat: {str(e)}")
+        
         return ResponReview(
             berhasil=True,
             pesan="Review berhasil dilakukan",
-            data=HasilEvaluasi(**hasil)
+            data=hasil_evaluasi
         )
 
     except (FormatTidakDidukung, BatasUkuranTerlampaui, DokumenTidakValid) as e:
@@ -210,3 +227,156 @@ async def cek_kesehatan() -> dict[str, str]:
         Dict berisi status dan versi aplikasi
     """
     return {"status": "sehat", "versi": "1.0.0"}
+
+
+# ============================================
+# ENDPOINTS RIWAYAT REVIEW
+# ============================================
+
+@aplikasi.get("/api/riwayat")
+async def ambil_riwayat(
+    limit: int = 50,
+    offset: int = 0
+):
+    """
+    Endpoint untuk mengambil riwayat review.
+
+    Parameter:
+        limit: Jumlah maksimal record (default: 50)
+        offset: Offset untuk pagination (default: 0)
+
+    Mengembalikan:
+        List riwayat review
+    """
+    try:
+        riwayat = database_riwayat.ambil_semua_riwayat(limit, offset)
+        total = database_riwayat.hitung_total_review()
+        
+        return {
+            "berhasil": True,
+            "data": riwayat,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+    except Exception as e:
+        pencatat.error(f"Gagal mengambil riwayat: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal mengambil riwayat review"
+        )
+
+
+@aplikasi.get("/api/riwayat/{review_id}")
+async def ambil_review(review_id: int):
+    """
+    Endpoint untuk mengambil detail review berdasarkan ID.
+
+    Parameter:
+        review_id: ID review
+
+    Mengembalikan:
+        Detail review
+    """
+    try:
+        review = database_riwayat.ambil_review_berdasarkan_id(review_id)
+        
+        if not review:
+            raise HTTPException(
+                status_code=404,
+                detail="Review tidak ditemukan"
+            )
+        
+        return {
+            "berhasil": True,
+            "data": review
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        pencatat.error(f"Gagal mengambil review: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal mengambil detail review"
+        )
+
+
+@aplikasi.delete("/api/riwayat/{review_id}")
+async def hapus_review(review_id: int):
+    """
+    Endpoint untuk menghapus review berdasarkan ID.
+
+    Parameter:
+        review_id: ID review yang akan dihapus
+
+    Mengembalikan:
+        Status penghapusan
+    """
+    try:
+        berhasil = database_riwayat.hapus_review(review_id)
+        
+        if not berhasil:
+            raise HTTPException(
+                status_code=404,
+                detail="Review tidak ditemukan"
+            )
+        
+        return {
+            "berhasil": True,
+            "pesan": "Review berhasil dihapus"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        pencatat.error(f"Gagal menghapus review: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal menghapus review"
+        )
+
+
+@aplikasi.get("/api/statistik")
+async def ambil_statistik():
+    """
+    Endpoint untuk mengambil statistik review.
+
+    Mengembalikan:
+        Statistik review
+    """
+    try:
+        statistik = database_riwayat.ambil_statistik()
+        return {
+            "berhasil": True,
+            "data": statistik
+        }
+    except Exception as e:
+        pencatat.error(f"Gagal mengambil statistik: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal mengambil statistik"
+        )
+
+
+# ============================================
+# ENDPOINTS PENGATURAN
+# ============================================
+
+@aplikasi.get("/api/pengaturan")
+async def ambil_pengaturan():
+    """
+    Endpoint untuk mengambil konfigurasi aplikasi.
+
+    Mengembalikan:
+        Konfigurasi aplikasi (tanpa API key)
+    """
+    return {
+        "berhasil": True,
+        "data": {
+            "model": pengaturan.groq_model,
+            "endpoint": pengaturan.groq_api_endpoint,
+            "ukuran_maks_mb": pengaturan.ukuran_maks_berkas_mb,
+            "mode_debug": pengaturan.mode_debug,
+            "api_key_tersedia": bool(pengaturan.groq_api_key)
+        }
+    }
+

@@ -1085,3 +1085,260 @@ a:hover {
 .visible {
   display: block !important;
 }
+
+/* ============================================
+   CONTENT SECTIONS
+   ============================================ */
+.content-section {
+  display: none;
+}
+
+.content-section.active {
+  display: block;
+}
+
+/* ============================================
+   STATISTICS GRID
+   ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--warna-bg-alt);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--warna-aksen);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--warna-teks-sekunder);
+  font-weight: 500;
+}
+
+/* ============================================
+   RIWAYAT LIST
+   ============================================ */
+.riwayat-item {
+  padding: 1.25rem;
+  border: 1px solid var(--warna-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.riwayat-item:hover {
+  border-color: var(--warna-aksen);
+  box-shadow: 0 2px 8px rgba(87, 62, 222, 0.1);
+  transform: translateY(-1px);
+}
+
+.riwayat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.75rem;
+}
+
+.riwayat-title {
+  font-weight: 600;
+  color: var(--warna-teks-primer);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.riwayat-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--warna-teks-sekunder);
+  flex-wrap: wrap;
+}
+
+.riwayat-skor {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--warna-aksen);
+}
+
+.riwayat-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--warna-border);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-pkm {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-skripsi {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-hibah {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.badge-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--warna-teks-muted);
+}
+
+.empty-state svg {
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ============================================
+   SETTINGS
+   ============================================ */
+.settings-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--warna-border);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.setting-label {
+  font-weight: 600;
+  color: var(--warna-teks-primer);
+}
+
+.setting-value {
+  color: var(--warna-teks-sekunder);
+  font-family: "Monaco", "Courier New", monospace;
+  font-size: 0.875rem;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--warna-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--warna-bg-alt);
+}
+
+.radio-label:hover {
+  border-color: var(--warna-aksen);
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--warna-aksen);
+}
+
+.radio-label input[type="radio"]:checked + span {
+  font-weight: 600;
+  color: var(--warna-aksen);
+}
+
+.radio-label span {
+  transition: all 0.3s ease;
+}
+
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .riwayat-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .settings-grid {
+    gap: 1rem;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE
+   ============================================ */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .riwayat-meta {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
