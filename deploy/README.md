@@ -147,44 +147,28 @@ sudo certbot certificates
 
 ## 🔍 Troubleshooting
 
-### Aplikasi tidak bisa start
+Jika aplikasi error di production:
 
 ```bash
-# Cek logs detail
-sudo journalctl -u proposal-reviewer -n 100
+# 1. Jalankan diagnostic script
+cd /opt/proposal-reviewer/deploy
+chmod +x troubleshoot.sh
+sudo ./troubleshoot.sh
 
-# Cek status service
-sudo systemctl status proposal-reviewer
-
-# Cek apakah port 8000 sudah digunakan
-sudo netstat -tulpn | grep 8000
+# 2. Lihat panduan lengkap
+cat TROUBLESHOOTING.md
 ```
 
-### 502 Bad Gateway
+Lihat [TROUBLESHOOTING.md](TROUBLESHOOTING.md) untuk panduan lengkap.
 
-```bash
-# Cek apakah aplikasi running
-sudo systemctl status proposal-reviewer
+### Common Issues
 
-# Restart aplikasi
-sudo systemctl restart proposal-reviewer
-
-# Cek nginx logs
-sudo tail -f /var/log/nginx/proposal-reviewer_error.log
-```
-
-### SSL Error
-
-```bash
-# Cek certificate
-sudo certbot certificates
-
-# Renew certificate
-sudo certbot renew
-
-# Test renewal
-sudo certbot renew --dry-run
-```
+| Issue                      | Quick Fix                                  |
+| -------------------------- | ------------------------------------------ |
+| Error saat upload proposal | `sudo journalctl -u proposal-reviewer -f`  |
+| 502 Bad Gateway            | `sudo systemctl restart proposal-reviewer` |
+| API key error              | Edit `/opt/proposal-reviewer/.env`         |
+| Port already used          | `sudo systemctl restart proposal-reviewer` |
 
 ## 📚 Referensi
 

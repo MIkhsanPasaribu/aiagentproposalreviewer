@@ -73,7 +73,16 @@ Proposal:
             api_key: API key untuk Groq
             api_endpoint: Endpoint API Groq
             model: Model yang digunakan (default: llama-3.3-70b-versatile)
+        
+        Pengecualian:
+            ValueError: Jika API key tidak valid
         """
+        if not api_key or not api_key.strip():
+            raise ValueError("API key tidak boleh kosong")
+        
+        if not api_key.startswith("gsk_"):
+            pencatat.warning("API key tidak memiliki format Groq yang benar (seharusnya dimulai dengan 'gsk_')")
+        
         self._api_key = api_key
         self._api_endpoint = api_endpoint
         self._model = model
@@ -110,6 +119,11 @@ Proposal:
         )
 
         try:
+            # Log untuk debugging
+            pencatat.info(f"Memanggil Groq API: {self._api_endpoint}")
+            pencatat.info(f"Model: {self._model}")
+            pencatat.info(f"API Key tersedia: {bool(self._api_key and len(self._api_key) > 10)}")
+            
             # Panggil Groq API
             async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.post(
@@ -135,29 +149,48 @@ Proposal:
                     }
                 )
 
+                pencatat.info(f"Groq API response status: {response.status_code}")
+
                 if response.status_code != 200:
-                    pencatat.error(f"Groq API error: {response.status_code} - {response.text}")
+                    error_detail = response.text
+                    pencatat.error(f"Groq API error: {response.status_code} - {error_detail}")
                     raise GagalMemproses(
-                        pesan=f"Gagal memanggil Groq API: {response.status_code}",
+                        pesan=f"Gagal memanggil Groq API (status {response.status_code}). Silakan coba lagi.",
                         kode="GROQ_API_ERROR"
                     )
 
                 hasil_json = response.json()
                 hasil_teks = hasil_json["choices"][0]["message"]["content"]
+                pencatat.info(f"Panjang respons: {len(hasil_teks)} karakter")
 
             pencatat.info("Review proposal selesai")
             return self._parse_hasil(hasil_teks)
 
-        except httpx.TimeoutException:
-            pencatat.error("Timeout saat memanggil Groq API")
+        except httpx.TimeoutException as e:
+            pencatat.error(f"Timeout saat memanggil Groq API: {str(e)}")
             raise GagalMemproses(
                 pesan="Timeout saat memproses proposal. Silakan coba lagi.",
                 kode="TIMEOUT"
             )
-        except Exception as e:
-            pencatat.error(f"Gagal melakukan review: {str(e)}")
+        except httpx.HTTPError as e:
+            pencatat.error(f"HTTP error saat memanggil Groq API: {str(e)}")
             raise GagalMemproses(
-                pesan=f"Gagal memproses proposal: {str(e)}",
+                pesan="Gagal terhubung ke server AI. Periksa koneksi internet.",
+                kode="HTTP_ERROR"
+            )
+        except KeyError as e:
+            pencatat.error(f"Format respons tidak sesuai: {str(e)}")
+            raise GagalMemproses(
+                pesan="Format respons dari AI tidak valid.",
+                kode="FORMAT_ERROR"
+            )
+        except GagalMemproses:
+            # Re-raise GagalMemproses
+            raise
+        except Exception as e:
+            pencatat.error(f"Gagal melakukan review: {type(e).__name__}: {str(e)}", exc_info=True)
+            raise GagalMemproses(
+                pesan=f"Terjadi kesalahan tidak terduga: {str(e)}",
                 kode="GAGAL_REVIEW"
             )
 

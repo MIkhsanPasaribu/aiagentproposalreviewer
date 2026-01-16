@@ -52,6 +52,25 @@ templat = Jinja2Templates(directory=str(DIREKTORI_APP / "templat"))
 
 # Inisialisasi layanan
 pengaturan = dapatkan_pengaturan()
+
+# Validasi konfigurasi saat startup
+@aplikasi.on_event("startup")
+async def validasi_konfigurasi():
+    """Validasi konfigurasi saat aplikasi startup."""
+    pencatat.info("Memulai validasi konfigurasi...")
+    
+    if not pengaturan.groq_api_key:
+        pencatat.error("GROQ_API_KEY tidak ditemukan di environment variables!")
+        raise RuntimeError("GROQ_API_KEY harus diset di file .env")
+    
+    if not pengaturan.groq_api_key.startswith("gsk_"):
+        pencatat.warning("GROQ_API_KEY tidak memiliki format yang benar")
+    
+    pencatat.info(f"API Endpoint: {pengaturan.groq_api_endpoint}")
+    pencatat.info(f"Model: {pengaturan.groq_model}")
+    pencatat.info(f"Max file size: {pengaturan.ukuran_maks_berkas_mb} MB")
+    pencatat.info("Konfigurasi valid ✓")
+
 pemuat_dokumen = PemuatDokumen(ukuran_maks_mb=pengaturan.ukuran_maks_berkas_mb)
 
 
