@@ -36,8 +36,8 @@ pencatat = logging.getLogger(__name__)
 # Inisialisasi aplikasi
 aplikasi = FastAPI(
     title="AI Proposal Reviewer",
-    description="API untuk meninjau proposal akademik menggunakan AI (Groq/Llama 3.3)",
-    version="1.0.0"
+    description="API untuk meninjau proposal akademik menggunakan AI (Groq/Llama 3.3) | Developed by Viona Rahmadani (23076080)",
+    version="1.1.0"
 )
 
 # Dapatkan direktori aplikasi
@@ -224,9 +224,15 @@ async def cek_kesehatan() -> dict[str, str]:
     Endpoint untuk health check.
 
     Mengembalikan:
-        Dict berisi status dan versi aplikasi
+        Dict berisi status, versi, dan info aplikasi
     """
-    return {"status": "sehat", "versi": "1.0.0"}
+    return {
+        "status": "sehat",
+        "versi": "1.1.0",
+        "aplikasi": "AI Proposal Reviewer",
+        "developer": "Viona Rahmadani (23076080)",
+        "deployment": "Microsoft Azure Cloud Platform"
+    }
 
 
 # ============================================

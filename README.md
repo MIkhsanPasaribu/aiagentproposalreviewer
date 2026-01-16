@@ -1,6 +1,19 @@
 # 🤖 AI Proposal Reviewer
 
+> **Aplikasi web berbasis AI untuk review otomatis proposal akademik menggunakan Groq API (Llama 3.3 70B)**
+
+[![Deployed on Azure](https://img.shields.io/badge/Deployed%20on-Microsoft%20Azure-0078D4?logo=microsoft-azure&logoColor=white)](https://vionaproposal-reviewer.centralindia.cloudapp.azure.com)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Groq](https://img.shields.io/badge/AI-Groq%20API-FF6F00?logo=ai&logoColor=white)](https://groq.com/)
+
 Aplikasi web full-stack untuk meninjau dan mengevaluasi proposal akademik (PDF/DOCX) menggunakan AI (Groq/Llama 3.3 70B) dengan fitur riwayat review dan statistik.
+
+**🔗 Live Demo**: [https://vionaproposal-reviewer.centralindia.cloudapp.azure.com](https://vionaproposal-reviewer.centralindia.cloudapp.azure.com)
+
+**👨‍💻 Developed by**: Viona Rahmadani (23076080) - Pendidikan Teknik Informatika
+
+---
 
 ## ✨ Fitur Utama
 
