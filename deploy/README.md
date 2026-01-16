@@ -9,10 +9,27 @@ deploy/
 ├── deploy.sh                    # Script deployment utama (first time)
 ├── update.sh                    # Script update aplikasi
 ├── setup-ssl.sh                 # Script setup SSL certificate
+├── quickfix.sh                  # Quick fix untuk error dependencies
+├── troubleshoot.sh              # Diagnostic script
+├── test-api.sh                  # Test API endpoints
 ├── proposal-reviewer.service    # Systemd service file
 ├── nginx.conf                   # Nginx configuration template
-└── README.md                    # Dokumentasi ini
+├── README.md                    # Dokumentasi ini
+├── QUICKFIX.md                  # Urgent fix guide
+└── TROUBLESHOOTING.md           # Troubleshooting lengkap
 ```
+
+## 🚨 Quick Fix (Jika Error)
+
+Jika aplikasi error dengan message "No module named 'langchain_community'":
+
+```bash
+cd /opt/proposal-reviewer/deploy
+chmod +x quickfix.sh
+sudo ./quickfix.sh
+```
+
+Lihat [QUICKFIX.md](QUICKFIX.md) untuk detail.
 
 ## 🚀 Quick Start
 

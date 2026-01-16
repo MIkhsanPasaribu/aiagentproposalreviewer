@@ -96,13 +96,26 @@ class PemuatDokumen:
         Mengembalikan:
             String berisi teks yang diekstrak
         """
-        from langchain_community.document_loaders import PyPDFLoader
+        from pypdf import PdfReader
 
-        pemuat = PyPDFLoader(str(jalur))
-        dokumen = pemuat.load()
-        teks_gabungan = "\n\n".join([dok.page_content for dok in dokumen])
-        pencatat.info(f"Berhasil memuat PDF: {len(teks_gabungan)} karakter")
-        return teks_gabungan
+        try:
+            pembaca = PdfReader(str(jalur))
+            teks_halaman = []
+            
+            for halaman in pembaca.pages:
+                teks = halaman.extract_text()
+                if teks:
+                    teks_halaman.append(teks)
+            
+            teks_gabungan = "\n\n".join(teks_halaman)
+            pencatat.info(f"Berhasil memuat PDF: {len(teks_gabungan)} karakter dari {len(pembaca.pages)} halaman")
+            return teks_gabungan
+        except Exception as e:
+            pencatat.error(f"Gagal memuat PDF: {str(e)}")
+            raise DokumenTidakValid(
+                pesan=f"Gagal membaca file PDF: {str(e)}",
+                kode="PDF_TIDAK_VALID"
+            )
 
     async def _muat_docx(self, jalur: Path) -> str:
         """
@@ -116,6 +129,13 @@ class PemuatDokumen:
         """
         import docx2txt
 
-        teks = docx2txt.process(str(jalur))
-        pencatat.info(f"Berhasil memuat DOCX: {len(teks)} karakter")
-        return teks
+        try:
+            teks = docx2txt.process(str(jalur))
+            pencatat.info(f"Berhasil memuat DOCX: {len(teks)} karakter")
+            return teks
+        except Exception as e:
+            pencatat.error(f"Gagal memuat DOCX: {str(e)}")
+            raise DokumenTidakValid(
+                pesan=f"Gagal membaca file DOCX: {str(e)}",
+                kode="DOCX_TIDAK_VALID"
+            )
